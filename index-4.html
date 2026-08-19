@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Moy Nazorati</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="icon" href="apple-touch-icon.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+  body { margin:0; font-family:'Inter',sans-serif; }
+  .disp { font-family:'Oswald',sans-serif; letter-spacing:0.02em; }
+  .mono { font-family:'JetBrains Mono',monospace; }
+  .tag-card { position:relative; }
+  .tag-hole { position:absolute; top:14px; left:18px; width:14px; height:14px; border-radius:50%; background:#1F1D1B; border:2px solid #4A453F; }
+  input, textarea { outline:none; }
+  input:focus, textarea:focus { border-color:#C98A3E !important; }
+  ::placeholder { color:#7A7268; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+/* ---- inline icons (no external icon lib needed) ---- */
+const Icon = ({ d, size = 16, color = "currentColor", strokeWidth = 2, viewBox = "0 0 24 24", children }) => (
+  <svg width={size} height={size} viewBox={viewBox} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    {children}
+  </svg>
+);
+const Wrench = (p) => <Icon {...p}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></Icon>;
+const Phone = (p) => <Icon {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></Icon>;
+const Plus = (p) => <Icon {...p}><path d="M12 5v14M5 12h14"/></Icon>;
+const Trash2 = (p) => <Icon {...p}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16z"/></Icon>;
+const MessageCircle = (p) => <Icon {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></Icon>;
+const X = (p) => <Icon {...p}><path d="M18 6 6 18M6 6l12 12"/></Icon>;
+const Pencil = (p) => <Icon {...p}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
+const AlertTriangle = (p) => <Icon {...p}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></Icon>;
+const Clock = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></Icon>;
+const CheckCircle2 = (p) => <Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></Icon>;
+const Search = (p) => <Icon {...p}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></Icon>;
+const Download = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></Icon>;
+const Upload = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></Icon>;
+const CalendarCheck = (p) => <Icon {...p}><path d="M8 2v4M16 2v4M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m9 16 2 2 4-4"/></Icon>;
+
+/* ---- app logic ---- */
+const DAY = 24 * 60 * 60 * 1000;
+function daysBetween(a, b) { return Math.round((b - a) / DAY); }
+
+function statusOf(lastDateStr, intervalDays) {
+  const last = new Date(lastDateStr + "T00:00:00");
+  const due = new Date(last.getTime() + intervalDays * DAY);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const left = daysBetween(today, due);
+  if (left < 0) return { key: "overdue", left, due };
+  if (left <= 7) return { key: "soon", left, due };
+  return { key: "ok", left, due };
+}
+
+const STATUS_META = {
+  overdue: { label: "Muddati o'tgan", color: "#D64545", bg: "rgba(214,69,69,0.14)", Icon: AlertTriangle },
+  soon: { label: "Yaqinlashmoqda", color: "#E0A526", bg: "rgba(224,165,38,0.14)", Icon: Clock },
+  ok: { label: "Vaqt bor", color: "#5B8C5A", bg: "rgba(91,140,90,0.14)", Icon: CheckCircle2 },
+};
+const NASIYA_META = { label: "Nasiya", color: "#8B6FB3", bg: "rgba(139,111,179,0.14)" };
+
+function fmtDate(d) {
+  return d.toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function smsLink(phone, name, car, meta, days) {
+  const digits = (phone || "").replace(/\D/g, "");
+  let msg;
+  if (meta.key === "overdue") msg = `Salom, ${name}! ${car} mashinangizning moy almashtirish muddati ${Math.abs(days)} kun oldin o'tib ketgan. Ustaxonaga tashrif buyurishingizni so'raymiz.`;
+  else if (meta.key === "soon") msg = `Salom, ${name}! ${car} mashinangizning moy almashtirish muddatiga ${days} kun qoldi. Vaqtida kelib qolishingizni tavsiya qilamiz.`;
+  else msg = `Salom, ${name}! ${car} mashinangiz uchun eslatma: keyingi moy almashtirish sanasi yaqinlashmoqda.`;
+  return `sms:${digits}?body=${encodeURIComponent(msg)}`;
+}
+
+const STORAGE_KEY = "moy_nazorati_customers";
+const emptyForm = { name: "", phone: "", car: "", lastDate: "", intervalDays: "90", note: "", debtAmount: "" };
+
+function OilTracker() {
+  const [customers, setCustomers] = useState(() => {
+    try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }
+    catch (e) { return []; }
+  });
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const fileInputRef = React.useRef(null);
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(customers)); } catch (e) {}
+  }, [customers]);
+
+  const enriched = useMemo(() => customers
+    .map((c) => ({ ...c, status: statusOf(c.lastDate, Number(c.intervalDays)) }))
+    .sort((a, b) => a.status.left - b.status.left), [customers]);
+
+  const counts = useMemo(() => {
+    const c = { overdue: 0, soon: 0, ok: 0, nasiya: 0 };
+    enriched.forEach((e) => {
+      c[e.status.key]++;
+      if (Number(e.debtAmount) > 0) c.nasiya++;
+    });
+    return c;
+  }, [enriched]);
+
+  const byFilter = filter === "all"
+    ? enriched
+    : filter === "nasiya"
+    ? enriched.filter((e) => Number(e.debtAmount) > 0)
+    : enriched.filter((e) => e.status.key === filter);
+  const visible = query.trim()
+    ? byFilter.filter((c) =>
+        (c.name || "").toLowerCase().includes(query.trim().toLowerCase()) ||
+        (c.car || "").toLowerCase().includes(query.trim().toLowerCase()) ||
+        (c.phone || "").includes(query.trim())
+      )
+    : byFilter;
+
+  function resetForm() { setForm(emptyForm); setEditingId(null); setShowForm(false); }
+
+  function submitForm(e) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.lastDate || !form.intervalDays) return;
+    if (editingId) setCustomers((prev) => prev.map((c) => (c.id === editingId ? { ...form, id: editingId } : c)));
+    else setCustomers((prev) => [...prev, { ...form, id: Date.now().toString() }]);
+    resetForm();
+  }
+
+  function startEdit(c) {
+    setForm({ name: c.name, phone: c.phone, car: c.car, lastDate: c.lastDate, intervalDays: c.intervalDays, note: c.note || "", debtAmount: c.debtAmount || "" });
+    setEditingId(c.id); setShowForm(true);
+  }
+
+  function markPaid(id) {
+    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, debtAmount: "" } : c)));
+  }
+
+  function removeCustomer(id) {
+    if (!confirm("Mijozni o'chirishni tasdiqlaysizmi?")) return;
+    setCustomers((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  function markToday(id) {
+    const today = new Date().toISOString().slice(0, 10);
+    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, lastDate: today } : c)));
+  }
+
+  function exportData() {
+    const blob = new Blob([JSON.stringify(customers, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `moy-nazorati-zaxira-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error("invalid");
+        if (!confirm(`${data.length} ta mijoz topildi. Hozirgi ro'yxatga qo'shilsinmi?`)) return;
+        setCustomers((prev) => {
+          const existingIds = new Set(prev.map((c) => c.id));
+          const merged = [...prev];
+          data.forEach((c) => {
+            if (!c.id || existingIds.has(c.id)) merged.push({ ...c, id: Date.now().toString() + Math.random().toString(36).slice(2, 6) });
+            else merged.push(c);
+          });
+          return merged;
+        });
+      } catch (err) {
+        alert("Fayl noto'g'ri formatda. Iltimos avval shu dastur orqali eksport qilingan faylni tanlang.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  return (
+    <div style={{ background: "#1F1D1B", minHeight: "100vh", color: "#F0EAE0" }}>
+      <div style={{ borderBottom: "1px solid #3A362F", background: "#242220" }} className="px-5 py-5 sm:px-8">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div style={{ background: "#C98A3E", width: 40, height: 40, borderRadius: 8 }} className="flex items-center justify-center shrink-0">
+              <Wrench size={20} color="#1F1D1B" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className="disp text-xl sm:text-2xl font-semibold">MOY NAZORATI</h1>
+              <p className="text-xs" style={{ color: "#A79C8E" }}>Mijozlar uchun moy almashtirish eslatmalari</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-5 sm:px-8 py-6">
+        <div className="relative mb-4">
+          <Search size={16} color="#7A7268" style={{ position: "absolute", left: 12, top: 12 }} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ism, mashina yoki telefon bo'yicha qidirish..."
+            style={{ background: "#242220", border: "1px solid #3A362F", color: "#F0EAE0" }}
+            className="w-full rounded-xl pl-9 pr-3 py-2.5 text-sm"
+          />
+        </div>
+
+        <div className="flex gap-2 mb-6">
+          <button onClick={exportData} style={{ background: "#242220", border: "1px solid #3A362F", color: "#A79C8E" }}
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium">
+            <Download size={14} /> Zaxira olish
+          </button>
+          <button onClick={() => fileInputRef.current && fileInputRef.current.click()} style={{ background: "#242220", border: "1px solid #3A362F", color: "#A79C8E" }}
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium">
+            <Upload size={14} /> Zaxiradan tiklash
+          </button>
+          <input ref={fileInputRef} type="file" accept="application/json" onChange={importData} style={{ display: "none" }} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {[{ key: "overdue", label: "O'tib ketgan" }, { key: "soon", label: "Yaqinlashgan" }, { key: "ok", label: "Vaqt bor" }].map(({ key, label }) => {
+            const meta = STATUS_META[key]; const active = filter === key;
+            return (
+              <button key={key} onClick={() => setFilter(active ? "all" : key)}
+                style={{ background: active ? meta.bg : "#242220", border: `1px solid ${active ? meta.color : "#3A362F"}` }}
+                className="rounded-xl px-3 py-3 text-left transition-colors">
+                <div className="mono text-2xl font-medium" style={{ color: meta.color }}>{counts[key]}</div>
+                <div className="text-xs mt-1" style={{ color: "#A79C8E" }}>{label}</div>
+              </button>
+            );
+          })}
+          <button onClick={() => setFilter(filter === "nasiya" ? "all" : "nasiya")}
+            style={{ background: filter === "nasiya" ? NASIYA_META.bg : "#242220", border: `1px solid ${filter === "nasiya" ? NASIYA_META.color : "#3A362F"}` }}
+            className="rounded-xl px-3 py-3 text-left transition-colors">
+            <div className="mono text-2xl font-medium" style={{ color: NASIYA_META.color }}>{counts.nasiya}</div>
+            <div className="text-xs mt-1" style={{ color: "#A79C8E" }}>Nasiya</div>
+          </button>
+        </div>
+
+        {filter !== "all" && (
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs" style={{ color: "#7A7268" }}>
+              Filtr: {filter === "nasiya" ? "Nasiya" : STATUS_META[filter].label}
+            </span>
+            <button onClick={() => setFilter("all")} className="text-xs underline" style={{ color: "#7A7268" }}>Tozalash</button>
+          </div>
+        )}
+
+        {visible.length === 0 && (
+          <div style={{ color: "#7A7268" }} className="text-center py-14 text-sm">
+            {enriched.length === 0 ? "Hozircha mijozlar yo'q. Pastdagi tugma orqali qo'shing." : "Bu toifada mijoz yo'q."}
+          </div>
+        )}
+
+        <div className="space-y-3 mb-6">
+          {visible.map((c) => {
+            const meta = STATUS_META[c.status.key]; const StatusIcon = meta.Icon;
+            const hasDebt = Number(c.debtAmount) > 0;
+            return (
+              <div key={c.id} className="tag-card rounded-xl pt-3 pb-4 px-4"
+                style={{ background: "#242220", border: `1px solid ${meta.color}55`, borderLeft: `4px solid ${meta.color}` }}>
+                <div className="tag-hole" />
+                <div className="flex items-start justify-between pl-5">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm truncate">{c.name}</div>
+                    <div className="text-xs mt-0.5" style={{ color: "#A79C8E" }}>{c.car || "Mashina ko'rsatilmagan"}</div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => startEdit(c)} className="p-1.5 rounded-lg" style={{ background: "#1F1D1B" }}><Pencil size={14} color="#A79C8E" /></button>
+                    <button onClick={() => removeCustomer(c.id)} className="p-1.5 rounded-lg" style={{ background: "#1F1D1B" }}><Trash2 size={14} color="#D64545" /></button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 mt-3 pl-5 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium" style={{ background: meta.bg, color: meta.color }}>
+                    <StatusIcon size={13} /> {meta.label}
+                  </span>
+                  <span className="mono text-xs" style={{ color: "#7A7268" }}>· keyingi: {fmtDate(c.status.due)}</span>
+                  {hasDebt && (
+                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium" style={{ background: NASIYA_META.bg, color: NASIYA_META.color }}>
+                      ✅ Nasiya: {c.debtAmount} so'm
+                    </span>
+                  )}
+                </div>
+                {c.note && <div className="text-xs mt-2 pl-5" style={{ color: "#7A7268" }}>{c.note}</div>}
+                {hasDebt && (
+                  <div className="pl-5 mt-2">
+                    <button onClick={() => { if (confirm(`${c.name} nasiyasi (${c.debtAmount} so'm) to'landi deb belgilansinmi?`)) markPaid(c.id); }}
+                      style={{ background: "transparent", border: `1px dashed ${NASIYA_META.color}` , color: NASIYA_META.color }}
+                      className="w-full rounded-lg py-1.5 text-xs font-medium">
+                      Nasiya to'landi
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mt-3 pl-5">
+                  {c.phone && (
+                    <a href={smsLink(c.phone, c.name, c.car, c.status, c.status.left)} style={{ background: "#5B8C5A", color: "#1F1D1B" }}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium">
+                      <MessageCircle size={14} /> SMS yuborish
+                    </a>
+                  )}
+                  {c.phone && (
+                    <a href={`tel:${c.phone.replace(/\D/g, "")}`} style={{ background: "#1F1D1B", border: "1px solid #3A362F" }} className="rounded-lg p-2">
+                      <Phone size={14} color="#A79C8E" />
+                    </a>
+                  )}
+                </div>
+                <div className="pl-5 mt-2">
+                  <button
+                    onClick={() => { if (confirm(`${c.name} uchun bugungi sanaga moy almashtirildi deb belgilansinmi?`)) markToday(c.id); }}
+                    style={{ background: "transparent", border: "1px dashed #3A362F", color: "#7A7268" }}
+                    className="w-full rounded-lg py-1.5 text-xs font-medium flex items-center justify-center gap-1.5"
+                  >
+                    <CalendarCheck size={13} /> Bugun bajarildi
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {!showForm && (
+          <button onClick={() => setShowForm(true)} style={{ background: "#C98A3E", color: "#1F1D1B" }}
+            className="w-full mb-6 rounded-xl py-3 font-medium flex items-center justify-center gap-2 disp text-sm tracking-wide">
+            <Plus size={18} strokeWidth={2.5} /> YANGI MIJOZ QO'SHISH
+          </button>
+        )}
+
+        {showForm && (
+          <form onSubmit={submitForm} style={{ background: "#242220", border: "1px solid #3A362F" }} className="rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="disp text-sm tracking-wide" style={{ color: "#C98A3E" }}>{editingId ? "MIJOZNI TAHRIRLASH" : "YANGI MIJOZ"}</h2>
+              <button type="button" onClick={resetForm}><X size={18} color="#A79C8E" /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input placeholder="Mijoz ismi" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                style={{ background: "#1F1D1B", border: "1px solid #3A362F", color: "#F0EAE0" }} className="col-span-2 rounded-lg px-3 py-2 text-sm" required />
+              <input placeholder="Telefon (masalan 998901234567)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                style={{ background: "#1F1D1B", border: "1px solid #3A362F", color: "#F0EAE0" }} className="col-span-2 rounded-lg px-3 py-2 text-sm" />
+              <input placeholder="Mashina (masalan Cobalt)" value={form.car} onChange={(e) => setForm({ ...form, car: e.target.value })}
+                style={{ background: "#1F1D1B", border: "1px solid #3A362F", color: "#F0EAE0" }} className="col-span-2 rounded-lg px-3 py-2 text-sm" />
+              <div>
+                <label className="text-xs" style={{ color: "#A79C8E" }}>Oxirgi almashtirilgan sana</label>
+                <input type="date" value={form.lastDate} onChange={(e) => setForm({ ...form, lastDate: e.target.value })}
+                  style={{ background: "#1F1D1B", border: "1px solid #3A362F", color: "#F0EAE0" }} className="w-full rounded-lg px-3 py-2 text-sm mt-1" required />
+              </div>
+              <div>
+                <label className="text-xs" style={{ color: "#A79C8E" }}>Interval (necha kunda)</label>
+                <input type="number" min="1" value={form.intervalDays} onChange={(e) => setForm({ ...form, intervalDays: e.target.value })}
+                  style={{ background: "#1F1D1B", border: "1px solid #3A362F", color: "#F0EAE0" }} className="w-full rounded-lg px-3 py-2 text-sm mt-1" required />
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs" style={{ color: NASIYA_META.color }}>Nasiya summasi (so'm) — agar nasiyaga bo'lsa</label>
+                <input type="number" min="0" placeholder="Bo'sh qoldiring, agar nasiya bo'lmasa" value={form.debtAmount} onChange={(e) => setForm({ ...form, debtAmount: e.target.value })}
+                  style={{ background: "#1F1D1B", border: `1px solid ${form.debtAmount ? NASIYA_META.color : "#3A362F"}`, color: "#F0EAE0" }} className="w-full rounded-lg px-3 py-2 text-sm mt-1" />
+              </div>
+              <textarea placeholder="Izoh (ixtiyoriy)" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })}
+                style={{ background: "#1F1D1B", border: "1px solid #3A362F", color: "#F0EAE0" }} className="col-span-2 rounded-lg px-3 py-2 text-sm resize-none" rows={2} />
+            </div>
+            <button type="submit" style={{ background: "#C98A3E", color: "#1F1D1B" }} className="w-full mt-3 rounded-lg py-2.5 font-medium disp text-sm tracking-wide">
+              {editingId ? "SAQLASH" : "QO'SHISH"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<OilTracker />);
+</script>
+</body>
+</html>
